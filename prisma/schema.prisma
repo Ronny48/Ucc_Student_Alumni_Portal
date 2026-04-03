@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  Int          @id @default(autoincrement())
+  emall               String       @unique
+  password_hash       String
+  role                String       @default("student")
+  status              String       @default("active")
+  created_at          DateTime     @default(now())
+  receivedConnections Connection[] @relation("FolloweeRelation")
+  sentConnections     Connection[] @relation("FollowerRelation")
+  likes               Like[]
+  receivedMessages    Message[]    @relation("ReceiverRelation")
+  sentMessages        Message[]    @relation("SenderRelation")
+  posts               Post[]
+  profile             Profile?
+  settings            Settings?
+}
+
+model Profile {
+  id              Int      @id @default(autoincrement())
+  user_id         Int      @unique
+  fullname        String?
+  graduation_year Int?
+  department      String?
+  program         String?
+  bio             String?
+  photo           String?
+  contact_info    String?
+  created_at      DateTime @default(now())
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  title      String
+  body       String
+  category   String?
+  status     String   @default("active")
+  created_at DateTime @default(now())
+  likes      Like[]
+  media      Media[]
+  user       User     @relation(fields: [user_id], references: [id])
+}
+
+model Connection {
+  id          Int      @id @default(autoincrement())
+  follower_id Int
+  followee_id Int
+  status      String   @default("pending")
+  created_at  DateTime @default(now())
+  followee    User     @relation("FolloweeRelation", fields: [followee_id], references: [id])
+  follower    User     @relation("FollowerRelation", fields: [follower_id], references: [id])
+}
+
+model Media {
+  id      Int    @id @default(autoincrement())
+  post_id Int
+  file    String
+  post    Post   @relation(fields: [post_id], references: [id])
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  sender_id   Int
+  receiver_id Int
+  body        String
+  status      String   @default("unread")
+  created_at  DateTime @default(now())
+  receiver    User     @relation("ReceiverRelation", fields: [receiver_id], references: [id])
+  sender      User     @relation("SenderRelation", fields: [sender_id], references: [id])
+}
+
+model Settings {
+  id                   Int     @id @default(autoincrement())
+  user_id              Int     @unique
+  theme                String  @default("light")
+  language             String  @default("en")
+  notification_enabled Boolean @default(true)
+  user                 User    @relation(fields: [user_id], references: [id])
+}
+
+model Like {
+  id      Int  @id @default(autoincrement())
+  user_id Int
+  post_id Int
+  post    Post @relation(fields: [post_id], references: [id])
+  user    User @relation(fields: [user_id], references: [id])
+}

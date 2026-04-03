@@ -1,0 +1,73 @@
+import { prisma } from "../config/prisma.js";
+
+// @desc    Create a new post
+// @route   POST /api/posts
+// @access  Private
+export const createPost = async (req, res) => {
+  try {
+    const { title, body, category } = req.body;
+
+    if (!title || !body) {
+      return res
+        .status(400)
+        .json({ error: "Title and body are required to make a post." });
+    }
+
+    // Create the post and link it to the logged-in user
+    const newPost = await prisma.post.create({
+      data: {
+        user_id: req.user.id,
+        title,
+        body,
+        category,
+      },
+    });
+
+    res.status(201).json({
+      message: "Post created successfully!",
+      post: newPost,
+    });
+  } catch (error) {
+    console.error("Create Post Error:", error);
+    res.status(500).json({ error: "Failed to create post." });
+  }
+};
+
+// @desc    Get all posts (The Global Feed)
+// @route   GET /api/posts
+// @access  Private
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      where: { status: "active" }, // Only show active posts
+      orderBy: { created_at: "desc" }, // Newest posts first!
+      include: {
+        // Grab the author's info
+        user: {
+          select: {
+            emall: true,
+            role: true,
+            profile: {
+              select: {
+                fullname: true,
+                photo: true,
+                department: true,
+              },
+            },
+          },
+        },
+        // Grab any attached media
+        media: true,
+        // Get the total count of likes!
+        _count: {
+          select: { likes: true },
+        },
+      },
+    });
+
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error("Fetch Posts Error:", error);
+    res.status(500).json({ error: "Failed to fetch posts." });
+  }
+};

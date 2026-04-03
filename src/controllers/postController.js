@@ -30,9 +30,6 @@ export const createPost = async (req, res) => {
   }
 };
 
-// @desc    Get all posts (The Global Feed)
-// @route   GET /api/posts
-// @access  Private
 export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({

@@ -25,9 +25,6 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-// @desc    Update current user's profile
-// @route   PUT /api/profile
-// @access  Private (Requires Token)
 export const updateMyProfile = async (req, res) => {
   try {
     // 1. Grab whatever fields the user sent in the request body

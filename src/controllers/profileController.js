@@ -1,7 +1,5 @@
 import { prisma } from "../config/prisma.js";
-// @desc    Get current user's profile
-// @route   GET /api/profile
-// @access  Private (Requires Token)
+
 export const getMyProfile = async (req, res) => {
   try {
     // req.user.id comes directly from our 'protect' middleware!
@@ -27,9 +25,6 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
-// @desc    Update current user's profile
-// @route   PUT /api/profile
-// @access  Private (Requires Token)
 export const updateMyProfile = async (req, res) => {
   try {
     // 1. Grab whatever fields the user sent in the request body
@@ -78,9 +73,6 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
-// @desc    Get all alumni profiles
-// @route   GET /api/profile/all
-// @access  Private
 export const getAllProfiles = async (req, res) => {
   try {
     // Fetch all profiles, and include the basic user info (like email)
@@ -99,9 +91,6 @@ export const getAllProfiles = async (req, res) => {
   }
 };
 
-// @desc    Get profile by User ID
-// @route   GET /api/profile/user/:userId
-// @access  Private
 export const getProfileByUserId = async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
@@ -126,9 +115,6 @@ export const getProfileByUserId = async (req, res) => {
   }
 };
 
-// @desc    Upload profile photo
-// @route   POST /api/profile/photo
-// @access  Private
 export const uploadProfilePhoto = async (req, res) => {
   try {
     // Multer/Cloudinary automatically attaches the file data to req.file!

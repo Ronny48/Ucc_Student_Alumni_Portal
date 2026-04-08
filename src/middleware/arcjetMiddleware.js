@@ -2,16 +2,14 @@ import { aj } from "../config/arcjet.js";
 
 export const requireHuman = async (req, res, next) => {
   try {
-    // Arcjet analyzes the incoming request
+    //Arcjet analyzes the Incoming Request
     const decision = await aj.protect(req, { requested: 1 });
 
     if (decision.isDenied()) {
       if (decision.reason.isRateLimit()) {
-        return res
-          .status(429)
-          .json({
-            error: "Too many OTP requests. Please try again in an hour.",
-          });
+        return res.status(429).json({
+          error: "Too many OTP requests. Please try again in an hour.",
+        });
       }
       if (decision.reason.isBot()) {
         return res

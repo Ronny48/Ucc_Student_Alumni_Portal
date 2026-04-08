@@ -12,7 +12,6 @@ export const protectRoute = (req, res, next) => {
       // Extract the token from the header (Format: "Bearer eyJhbGci...")
       token = req.headers.authorization.split(" ")[1];
 
-      // Verify the token using the secret in your .env
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Attach the decoded user payload (which contains the user ID) to the request object

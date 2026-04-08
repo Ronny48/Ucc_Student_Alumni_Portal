@@ -20,9 +20,29 @@ export const createPost = async (req, res) => {
       },
     });
 
+    //Check if the user attached any images (req.files comes from Multer)
+    if (req.files && req.files.length > 0) {
+      // Create an array of media objects ready for Prisma
+      const mediaData = req.files.map((file) => ({
+        post_id: newPost.id,
+        file: file.path, // This is the live Cloudinary URL
+      }));
+
+      // Bulk insert all the images into the Media table!
+      await prisma.media.createMany({
+        data: mediaData,
+      });
+    }
+
+    //Fetch the final post WITH its newly attached media to send back
+    const finalPost = await prisma.post.findUnique({
+      where: { id: newPost.id },
+      include: { media: true },
+    });
+
     res.status(201).json({
       message: "Post created successfully!",
-      post: newPost,
+      post: finalPost,
     });
   } catch (error) {
     console.error("Create Post Error:", error);

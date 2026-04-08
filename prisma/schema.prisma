@@ -95,3 +95,5 @@ model Like {
   post    Post @relation(fields: [post_id], references: [id])
   user    User @relation(fields: [user_id], references: [id])
 }
+
+//Remember to take out the title from the post model and change emall to email

@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendOTPEmail = async (to, otp) => {
+  //Email template
   const mailOptions = {
     from: `"UCC Alumni Portal" <${process.env.EMAIL_USER}>`,
     to,

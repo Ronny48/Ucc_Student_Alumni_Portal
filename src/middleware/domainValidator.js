@@ -7,7 +7,7 @@ export const validateUCCEmail = (req, res, next) => {
     return res.status(400).json({ error: "Email (emall) is required" });
   }
 
-  // Extract the domain part after the '@'
+  // Extract the domain part after the '@' symbol
   const domain = emall.split("@")[1];
 
   if (!ALLOWED_DOMAINS.includes(domain)) {

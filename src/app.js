@@ -3,7 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
-import "dotenv/config"; // Load environment variables from .env file
+import "dotenv/config";
 
 const app = express();
 
@@ -16,7 +16,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/posts", postRoutes);
 
-// Health check route
+//Health check route
 app.get("/health", (req, res) => {
   res
     .status(200)

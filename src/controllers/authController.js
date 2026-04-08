@@ -4,13 +4,13 @@ import { prisma } from "../config/prisma.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwtTools.js";
 import jwt from "jsonwebtoken";
-import "dotenv/config"; // Load environment variables from .env file
+import "dotenv/config";
 
 export const requestOTP = async (req, res) => {
   try {
     const { emall } = req.body; // Accessing the custom 'emall' field
 
-    // 1. Check if user already exists in Postgres
+    //Check if user already exists in Postgres
     const existingUser = await prisma.user.findUnique({
       where: { emall },
     });
@@ -21,11 +21,11 @@ export const requestOTP = async (req, res) => {
         .json({ error: "A user with this email already exists." });
     }
 
-    // 2. Generate and save OTP to Redis
+    //Generate and save OTP to Redis
     const otp = generateOTP();
     await saveOTP(emall, otp);
 
-    // 3. Send the email via Nodemailer
+    //Send the email via Nodemailer
     await sendOTPEmail(emall, otp);
 
     res.status(200).json({ message: "OTP sent successfully to your email." });
@@ -35,7 +35,7 @@ export const requestOTP = async (req, res) => {
   }
 };
 
-/// Verify OTP
+///Verify OTP
 export const verifyEmail = async (req, res) => {
   try {
     const { emall, otp } = req.body;
@@ -46,7 +46,7 @@ export const verifyEmail = async (req, res) => {
         .json({ error: "Please provide both Email and OTP." });
     }
 
-    // 1. Verify the OTP with Upstash Redis
+    //Verify the OTP with Upstash Redis
     const otpCheck = await verifyOTP(emall, otp);
 
     if (!otpCheck.valid) {
@@ -60,7 +60,7 @@ export const verifyEmail = async (req, res) => {
       { expiresIn: "1h" },
     );
 
-    // 3. Send the pass back to the user!
+    //Send the pass back to the user!
     res.status(200).json({
       message:
         "Email verified successfully! You have 1 hour to complete your profile.",
@@ -86,7 +86,7 @@ export const registerUser = async (req, res) => {
       registrationToken, // 🚨 We now require the VIP pass!
     } = req.body;
 
-    // 1. Check if they provided the required fields AND the token
+    //Check if they provided the required fields AND the token
     if (
       !emall ||
       !password ||
@@ -100,7 +100,7 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // 2. Check the VIP Pass to ensure they actually verified this exact email
+    //Check the VIP Pass to ensure they actually verified this exact email
     try {
       const decoded = jwt.verify(registrationToken, process.env.JWT_SECRET);
       if (decoded.verifiedEmail !== emall) {
@@ -116,11 +116,11 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // 3. Hash the password for security
+    //Hash the password for security
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 4. Save the user AND profile to Postgres via Prisma
+    //Save the user AND profile to Postgres via Prisma
     const newUser = await prisma.user.create({
       data: {
         emall,
@@ -140,10 +140,10 @@ export const registerUser = async (req, res) => {
       },
     });
 
-    // 5. Generate the OFFICIAL JWT (Digital ID Card) for logging in
+    //Generate the OFFICIAL JWT (Digital ID Card) for logging in
     const token = generateToken(newUser.id);
 
-    // 6. Send back the success response!
+    //Send back the success response!
     res.status(201).json({
       message: "Registration successful!",
       token,

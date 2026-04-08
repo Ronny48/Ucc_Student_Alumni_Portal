@@ -2,7 +2,7 @@ import { prisma } from "../config/prisma.js";
 
 export const getMyProfile = async (req, res) => {
   try {
-    // req.user.id comes directly from our 'protect' middleware!
+    // req.user.id comes directly from our 'protectRoute' middleware!
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       include: { profile: true }, // Pull in the attached Profile table
@@ -17,7 +17,7 @@ export const getMyProfile = async (req, res) => {
       emall: user.emall,
       role: user.role,
       status: user.status,
-      profile: user.profile, // This will hold the firstName, lastName, etc.
+      profile: user.profile,
     });
   } catch (error) {
     console.error("Profile Fetch Error:", error);
@@ -27,7 +27,7 @@ export const getMyProfile = async (req, res) => {
 
 export const updateMyProfile = async (req, res) => {
   try {
-    // 1. Grab whatever fields the user sent in the request body
+    //Grab whatever fields the user sent in the request body
     const {
       fullname,
       graduation_year,
@@ -37,8 +37,8 @@ export const updateMyProfile = async (req, res) => {
       contact_info,
     } = req.body;
 
-    // 2. Update the profile in Postgres
-    // We use the req.user.id from the Bouncer (protect middleware)
+    // Update the profile in Postgres
+    // We use the req.user.id from the Bouncer (protectRoute middleware)
     const updatedProfile = await prisma.profile.upsert({
       where: { user_id: req.user.id },
       update: {
@@ -62,7 +62,7 @@ export const updateMyProfile = async (req, res) => {
       },
     });
 
-    // 3. Send the shiny new profile back
+    //Send the shiny new profile back
     res.status(200).json({
       message: "Profile updated successfully!",
       profile: updatedProfile,

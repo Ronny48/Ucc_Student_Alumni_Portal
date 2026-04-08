@@ -10,31 +10,43 @@ export const createPost = async (req, res) => {
         .json({ error: "Title and body are required to make a post." });
     }
 
-    // Create the post and link it to the logged-in user
-    const newPost = await prisma.post.create({
-      data: {
-        user_id: req.user.id,
-        title,
-        body,
-        category,
-      },
-    });
+    let newPost;
 
-    //Check if the user attached any images (req.files comes from Multer)
+    // If the user attached media, create the post and media together in a transaction
     if (req.files && req.files.length > 0) {
-      // Create an array of media objects ready for Prisma
-      const mediaData = req.files.map((file) => ({
-        post_id: newPost.id,
-        file: file.path, // This is the live Cloudinary URL
-      }));
+      newPost = await prisma.$transaction(async (tx) => {
+        const createdPost = await tx.post.create({
+          data: {
+            user_id: req.user.id,
+            title,
+            body,
+            category,
+          },
+        });
 
-      // Bulk insert all the images into the Media table!
-      await prisma.media.createMany({
-        data: mediaData,
+        const mediaData = req.files.map((file) => ({
+          post_id: createdPost.id,
+          file: file.path, // This is the live Cloudinary URL
+        }));
+
+        await tx.media.createMany({
+          data: mediaData,
+        });
+
+        return createdPost;
+      });
+    } else {
+      newPost = await prisma.post.create({
+        data: {
+          user_id: req.user.id,
+          title,
+          body,
+          category,
+        },
       });
     }
 
-    //Fetch the final post WITH its newly attached media to send back
+    // Fetch the final post WITH its newly attached media to send back
     const finalPost = await prisma.post.findUnique({
       where: { id: newPost.id },
       include: { media: true },

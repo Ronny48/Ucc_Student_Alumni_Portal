@@ -1,5 +1,14 @@
 import { prisma } from "../config/prisma.js";
 
+// Helper function to validate and parse route parameter IDs
+const validateIntegerId = (id) => {
+  const parsed = parseInt(id, 10);
+  if (isNaN(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+};
+
 export const createPost = async (req, res) => {
   try {
     const { title, body, category } = req.body;
@@ -103,23 +112,32 @@ export const getAllPosts = async (req, res) => {
 // @access  Private
 export const toggleLike = async (req, res) => {
   try {
-    const postId = parseInt(req.params.id);
+    // Validate post ID parameter
+    const postId = validateIntegerId(req.params.id);
+    if (postId === null) {
+      return res.status(400).json({ error: "Invalid post id" });
+    }
+
     const userId = req.user.id;
+
     // 1. Check if the post actually exists and is active
     const post = await prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.status !== "active") {
       return res.status(404).json({ error: "Post not found." });
     }
-    // 2. Check if the user has ALREADY liked it
-    const existingLike = await prisma.like.findFirst({
+
+    // 2. Check if the user has ALREADY liked it using composite key
+    const existingLike = await prisma.like.findUnique({
       where: {
-        post_id: postId,
-        user_id: userId,
+        post_id_user_id: { post_id: postId, user_id: userId },
       },
     });
+
     if (existingLike) {
-      // 3a. If they already liked it, UNLIKE it (Delete the like record)
-      await prisma.like.delete({ where: { id: existingLike.id } });
+      // 3a. If they already liked it, UNLIKE it (Delete using composite key)
+      await prisma.like.delete({
+        where: { post_id_user_id: { post_id: postId, user_id: userId } },
+      });
 
       const likeCount = await prisma.like.count({ where: { post_id: postId } });
 
@@ -127,13 +145,27 @@ export const toggleLike = async (req, res) => {
         .status(200)
         .json({ message: "Post unliked successfully.", likeCount });
     } else {
-      // 3b. If they haven't liked it, LIKE it (Create a like record)
-      await prisma.like.create({
-        data: {
-          post_id: postId,
-          user_id: userId,
-        },
-      });
+      // 3b. If they haven't liked it, LIKE it with race-condition protection
+      try {
+        await prisma.like.create({
+          data: {
+            post_id: postId,
+            user_id: userId,
+          },
+        });
+      } catch (e) {
+        // Handle unique constraint violation (concurrent request created the like)
+        if (e.code === "P2002") {
+          // Like already exists from concurrent request; treat as success
+          const likeCount = await prisma.like.count({
+            where: { post_id: postId },
+          });
+          return res
+            .status(201)
+            .json({ message: "Post liked successfully.", likeCount });
+        }
+        throw e; // Re-throw other errors
+      }
 
       const likeCount = await prisma.like.count({ where: { post_id: postId } });
 
@@ -152,7 +184,12 @@ export const toggleLike = async (req, res) => {
 // @access  Private
 export const deletePost = async (req, res) => {
   try {
-    const postId = parseInt(req.params.id);
+    // Validate post ID parameter
+    const postId = validateIntegerId(req.params.id);
+    if (postId === null) {
+      return res.status(400).json({ error: "Invalid post id" });
+    }
+
     const userId = req.user.id;
     // 1. Find the post
     const post = await prisma.post.findUnique({ where: { id: postId } });

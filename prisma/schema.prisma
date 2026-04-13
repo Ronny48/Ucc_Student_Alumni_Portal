@@ -94,6 +94,8 @@ model Like {
   post_id Int
   post    Post @relation(fields: [post_id], references: [id])
   user    User @relation(fields: [user_id], references: [id])
+
+  @@unique([post_id, user_id])
 }
 
 //Remember to take out the title from the post model and change emall to email
